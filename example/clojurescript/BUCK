@@ -1,0 +1,5 @@
+include_defs('//clojure-clojurescript-buck/lib')
+
+om_component('page-header')
+cljs_project('page-header')
+cljs_release('page-header')
