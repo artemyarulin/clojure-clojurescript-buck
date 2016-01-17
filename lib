@@ -36,7 +36,7 @@ def cljc_module(name,src=None,ns='',modules=[],deps=[]):
 # Generated project.clj file and creates lein compatable project for the source module
 def project(module_name,template):
     genrule(name = 'project',
-            srcs = ['.'],
+            srcs = glob(['**/*.*'], excludes = ['BUCK']),
             bash = 'name=' + module_name + '&&' +
                    'source=$(location :' + module_name + ') &&' +
                    'deps=`cat $source/deps | sort --unique` &&' +
@@ -68,13 +68,13 @@ $deps]
 # Genereates release output for the source module
 def clj_release(module_name):
     genrule(name='release',
-            srcs = ['.'],
+            srcs = glob(['**/*.*'], excludes = ['BUCK']),
             bash = 'cd $(location :project) && lein uberjar && cp target/*-standalone.jar $OUT',
             out = module_name + '.jar')
 
 def cljs_release(name):
     genrule(name='release',
-            srcs = ['.'],
+            srcs = glob(['**/*.*'], excludes = ['BUCK']),
             bash = 'cd $(location :project) && lein cljsbuild once release && cp target/cljsbuild-main.js $OUT',
             out = name + '.js')
 
