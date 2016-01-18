@@ -53,12 +53,17 @@ def project(module_name,template):
                    'cat > $OUT/project.clj <<EOL\n' + template + '\nEOL\n',
             out = 'project.' + module_name)
 
-def clj_project(module_name):
+def clj_project(module_name,main=None):
+    main_template = """
+    :main {0}
+    :aot [{0}]""".format(main) if main else ""
+
     template = """(defproject $name "0.0.1"
   :dependencies [
 $deps]
-  :source-paths ["src"])"""
-    project(module_name,template)
+  {0}
+  :source-paths ["src"])""".format(main_template)
+    project(module_name,template,)
 
 def cljs_project(module_name):
     template = """(defproject $name "0.0.1"
