@@ -25,4 +25,4 @@ See [example](example) folder for both Clojure and ClojureScript examples
 
 ## Status
 
-I'm using it everywhere for Clojure and ClojureScript open source and not projects. Right way of doing staff would be extending Buck, but for now it's too big task for me
+I'm using it everywhere for Clojure and ClojureScript open source and not projects, although it's still an alpha quality - many corner cases are not covered. Right way of doing staff would be extending Buck, but for now it's too big task for me
