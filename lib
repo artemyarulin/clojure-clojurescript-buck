@@ -83,7 +83,7 @@ $deps]
 def clj_release(module_name):
     genrule(name='release',
             srcs = glob(['**/*.*'], excludes = ['BUCK']),
-            bash = 'cd $(location :project) && lein uberjar && cp target/*-standalone.jar $OUT',
+            bash = 'cd $(location :project) && LEIN_ROOT=1 lein uberjar && cp target/*-standalone.jar $OUT',
             out = module_name + '.jar')
 
 def cljs_release(name):
