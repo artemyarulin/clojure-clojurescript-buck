@@ -10,9 +10,9 @@ def module(name,ext,src,ns,modules,deps,tests,test_modules,include_modules_test=
 
     genrule(name = 'tests',
             srcs = tests,
-            bash = 'mkdir -p $OUT && ' +
+            bash = 'mkdir -p $OUT/{0} && '.format(ns) +
             'for d in $SRCS; do if [[ -d $d ]]; then rsync -r $d/ $OUT; fi; done &&' +
-            'for f in $SRCS; do if [[ -f $f ]]; then rsync -r $f $OUT; fi; done &&' +
+            'for f in $SRCS; do if [[ -f $f ]]; then rsync -r $f $OUT/{0}; fi; done &&'.format(ns) +
             ('&&'.join(map(lambda d: 'rsync -r $(location ' + d + ')/src/ $OUT',test_modules)) if len(test_modules) else 'true'),
             out='test')
 
