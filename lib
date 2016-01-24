@@ -4,9 +4,17 @@ project_template_cljs = """(defproject $name "0.0.1"
           [lein-doo "0.1.6-SNAPSHOT"]]
 :source-paths ["src" "test"]
 :cljsbuild {:builds {:debug {:source-paths ["src" "test"]
-                             :compiler {:output-dir "debug"}}
+                             :compiler {:optimizations :simple
+                                        :output-dir "debug"
+                                        :output-to "debug/$name.js"}}
+                     :integration {:source-paths ["src" "test"]
+                                   :compiler {:optimizations :advanced
+                                              :output-dir "integ"
+                                              :output-to "integ/$name.min.js"}}
                      :release {:source-paths ["src"]
-                               :compiler {:optimizations :advanced}}}})"""
+                               :compiler {:optimizations :advanced
+                                          :output-dir "release"
+                                          :output-to "release/$name.js"}}}})"""
 
 project_template_clj = """(defproject $name "0.0.1"
   :dependencies [$deps]
@@ -22,6 +30,8 @@ def module(name,ext,src,ns,modules,deps,tests,test_modules,main):
     project_main  = ":main {0}\n  :aot [{0}]".format(main) if main else ""
     project_template = project_template_cljs if ext == '.cljs' else project_template_clj.format(project_main)
     build_cmd = 'lein jar' if ext == '.clj' else 'lein cljsbuild once debug'
+    is_clj = ext == '.clj'
+    is_cljs = ext == '.cljs'
 
     genrule(name = name,
             srcs = src + tests,
@@ -32,7 +42,7 @@ def module(name,ext,src,ns,modules,deps,tests,test_modules,main):
             ('&&'.join(map(lambda d: 'rsync -r --remove-source-files $OUT/src/{0}/{1} $OUT/test/{0}'.format(ns,d),tests)) if len(tests) else 'true') + '&&' +
             ('&&'.join(map(lambda d: 'rsync -r $(location ' + d + ')/src/ $OUT/test',test_modules)) if len(test_modules) else 'true') + '&&' +
 
-            ('&&'.join(map(lambda d: 'rsync -r $(location ' + d + ')/src/ $OUT/src',modules)) if len(modules) else 'true') + '&&' +
+            ('&&'.join(map(lambda d: 'rsync -r --prune-empty-dirs $(location ' + d + ')/src/ $OUT/src',modules)) if len(modules) else 'true') + '&&' +
             ('&&'.join(map(lambda d: 'cat $(location ' + d + ')/deps >> $OUT/deps',modules)) if len(modules) else 'true') + '&&' +
             ('&&'.join(map(lambda d: 'echo ' + d.replace('"','\\"') + ' >> $OUT/deps',deps)) if len(deps) else 'true') + '&&' +
             'name=' + name + ' &&' +
@@ -42,20 +52,25 @@ def module(name,ext,src,ns,modules,deps,tests,test_modules,main):
             out = 'build',
             visibility = ['PUBLIC'])
 
-    if main and ext == '.clj':
+    if main and is_clj:
         genrule(name='release',
                 srcs = glob(['**/*.*'], excludes = ['BUCK']),
                 bash = 'cd $(location :{0}) && LEIN_ROOT=1 lein uberjar && cp target/*-standalone.jar $OUT'.format(name),
                 out = name + '.jar')
-    if main and ext == '.cljs':
+    if main and is_cljs:
         genrule(name='release',
                 srcs = glob(['**/*.*'], excludes = ['BUCK']),
                 bash = 'cd $(location :{0}) && lein cljsbuild once release && cp target/cljsbuild-main.js $OUT'.format(name),
                 out = name + '.js')
 
-    if len(tests):
+    if len(tests) and is_clj:
         sh_test(name = 'test',
                 test = '//public/clojure-clojurescript-buck:clj_test.sh',
+                args = ['$(location :{0})'.format(name)],
+                deps = [':' + name])
+    if len(tests) and is_cljs:
+        sh_test(name = 'test',
+                test = '//public/clojure-clojurescript-buck:cljs_test.sh',
                 args = ['$(location :{0})'.format(name)],
                 deps = [':' + name])
 
@@ -66,5 +81,6 @@ def cljs_module(name,src=None,ns='',modules=[],deps=[],tests=[],test_modules=[],
     def_modules = ['[org.clojure/clojure "1.8.0"]',
                    '[org.clojure/clojurescript "1.7.228"]',
                    '[figwheel-sidecar "0.5.0-SNAPSHOT"]',
-                   '[com.cemerick/piggieback "0.2.1"]']
+                   '[com.cemerick/piggieback "0.2.1"]',
+                   '[lein-doo "0.1.6-SNAPSHOT"]']
     module(name,'.cljs',src,ns,modules,def_modules + deps,tests,test_modules,main)
