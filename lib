@@ -1,0 +1,88 @@
+import os
+
+project_template_cljs = """(defproject $name "0.0.1"
+:dependencies [$deps]
+:plugins [[lein-cljsbuild "1.1.2"]
+          [lein-doo "0.1.6-SNAPSHOT"]]
+:source-paths ["src" "test"]
+:cljsbuild {:builds {:debug {:source-paths ["src" "test"]
+                             :compiler {:optimizations :simple
+                                        :output-dir "debug"
+                                        :output-to "debug/$name.js"}}
+                     :integration {:source-paths ["src" "test"]
+                                   :compiler {:optimizations :advanced
+                                              :output-dir "integ"
+                                              :output-to "integ/$name.min.js"}}
+                     :release {:source-paths ["src"]
+                               :compiler {:optimizations :advanced
+                                          :output-dir "release"
+                                          :output-to "release/$name.js"}}}})"""
+
+project_template_clj = """(defproject $name "0.0.1"
+  :dependencies [$deps]
+  {0}
+  :source-paths ["src"])"""
+
+# Generates source module. Will put together current module source and dependend modules sources into src/ folder together
+# Will create deps file which would contain current and dependend module dependencies
+def module(name,ext,src,ns,modules,deps,tests,test_modules,main):
+    src = src or [name + ext]
+    ns = ns or name
+    ns = ns.replace('.','//').replace('-','_')
+    project_main  = ":main {0}\n  :aot [{0}]".format(main) if main else ""
+    project_template = project_template_cljs if ext == '.cljs' else project_template_clj.format(project_main)
+    build_cmd = 'lein jar' if ext == '.clj' else 'lein cljsbuild once debug'
+    is_clj = ext == '.clj'
+    is_cljs = ext == '.cljs'
+
+    genrule(name = name,
+            srcs = src + tests,
+            bash = 'mkdir -p $OUT/{{src,test}}/{0} &&'.format(ns) +
+            'for d in $SRCS; do if [[ -d $d ]]; then rsync -r $d/ $OUT/src; fi; done && ' +
+            'for f in $SRCS; do if [[ -f $f ]]; then rsync -r $f $OUT/src/{0}; fi; done &&'.format(ns) +
+
+            ('&&'.join(map(lambda d: 'rsync -r --remove-source-files $OUT/src/{0}/{1} $OUT/test/{0}'.format(ns,os.path.basename(d)),tests)) if len(tests) else 'true') + '&&' +
+            ('&&'.join(map(lambda d: 'rsync -r $(location ' + d + ')/src/ $OUT/test',test_modules)) if len(test_modules) else 'true') + '&&' +
+
+            ('&&'.join(map(lambda d: 'rsync -r --prune-empty-dirs $(location ' + d + ')/src/ $OUT/src',modules)) if len(modules) else 'true') + '&&' +
+            ('&&'.join(map(lambda d: 'cat $(location ' + d + ')/deps >> $OUT/deps',modules)) if len(modules) else 'true') + '&&' +
+            ('&&'.join(map(lambda d: 'echo ' + d.replace('"','\\"') + ' >> $OUT/deps',deps)) if len(deps) else 'true') + '&&' +
+            'name=' + name + ' &&' +
+            'deps=`cat $OUT/deps | sort --unique` &&' +
+            'cat > $OUT/project.clj <<EOL\n' + project_template + '\nEOL\n\n ' +
+            'cd $OUT &&' + build_cmd,
+            out = 'build',
+            visibility = ['PUBLIC'])
+
+    if main and is_clj:
+        genrule(name='release',
+                srcs = glob(['**/*.*'], excludes = ['BUCK']),
+                bash = 'cd $(location :{0}) && LEIN_ROOT=1 lein uberjar && cp target/*-standalone.jar $OUT'.format(name),
+                out = name + '.jar')
+    if main and is_cljs:
+        genrule(name='release',
+                srcs = glob(['**/*.*'], excludes = ['BUCK']),
+                bash = 'cd $(location :{0}) && lein cljsbuild once release && cp target/cljsbuild-main.js $OUT'.format(name),
+                out = name + '.js')
+
+    if len(tests) and is_clj:
+        sh_test(name = 'test',
+                test = '//RULES/clojure-clojurescript-buck:clj_test.sh',
+                args = ['$(location :{0})'.format(name)],
+                deps = [':' + name])
+    if len(tests) and is_cljs:
+        sh_test(name = 'test',
+                test = '//RULES/clojure-clojurescript-buck:cljs_test.sh',
+                args = ['$(location :{0})'.format(name)],
+                deps = [':' + name])
+
+def clj_module(name,src=None,ns='',modules=[],deps=[],tests=[],test_modules=[],main=None):
+    module(name,'.clj',src,ns,modules,['[org.clojure/clojure "1.8.0"]'] + deps,tests,test_modules,main)
+
+def cljs_module(name,src=None,ns='',modules=[],deps=[],tests=[],test_modules=[],main=None):
+    def_modules = ['[org.clojure/clojure "1.8.0"]',
+                   '[org.clojure/clojurescript "1.7.228"]',
+                   '[figwheel-sidecar "0.5.0-SNAPSHOT"]',
+                   '[com.cemerick/piggieback "0.2.1"]',
+                   '[lein-doo "0.1.6-SNAPSHOT"]']
+    module(name,'.cljs',src,ns,modules,def_modules + deps,tests,test_modules,main)
