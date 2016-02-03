@@ -9,12 +9,11 @@ export_file('cljs_test.sh',
 module(name = 'clojure',
        ext = '.clj',
        src = [],
-       ns = None,
        modules = [],
        deps = ['[org.clojure/clojure "1.8.0"]'],
        tests = [],
-       test_modules = [],
-       main = None)
+       main = None,
+       template = '(defproject clojure "0.0.1")')
 
 clj_module(name = 'clojurescript',
            src=[],

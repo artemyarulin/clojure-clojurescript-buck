@@ -1,89 +1,99 @@
 def target(name):
     return '//RULES/clojure-clojurescript-buck:' + name
 
-project_template_cljs = """(defproject $name "0.0.1"
-:dependencies [$deps]
-:plugins [[lein-cljsbuild "1.1.2"]
-          [lein-doo "0.1.6"]]
-:source-paths ["src" "test"]
-:cljsbuild {:builds {:debug {:source-paths ["src" "test"]
-                             :compiler {:optimizations :simple
-                                        :output-dir "debug"
-                                        :output-to "debug/$name.js"}}
-                     :integration {:source-paths ["src" "test"]
-                                   :compiler {:optimizations :advanced
-                                              :output-dir "integ"
-                                              :output-to "integ/$name.min.js"}}
-                     :release {:source-paths ["src"]
-                               :compiler {:optimizations :advanced
-                                          :output-dir "release"
-                                          :output-to "release/$name.js"}}}})"""
+def ensure_list(i):
+    return i if isinstance(i,list) else [i]
 
-project_template_clj = """(defproject $name "0.0.1"
-  :dependencies [$deps]
-  {0}
-  :source-paths ["src"])"""
-
-# Generates source module. Will put together current module source and dependend modules sources into src/ folder together
-# Will create deps file which would contain current and dependend module dependencies
-def module(name,ext,src,ns,modules,deps,tests,test_modules,main):
-    src = [name + ext] if src == None else src
-    ns = ns or name
-    ns = ns.replace('.','//').replace('-','_')
+def module(name,ext,src,modules,deps,tests,main,template):
+    src = [name.replace('-','_') + ext] if src == None else src
+    is_clj, is_cljs = ext == '.clj', ext == '.cljs'
+    src, modules, deps, tests = map(ensure_list, [src,modules,deps,tests])
     project_main  = ":main {0}\n  :aot [{0}]".format(main) if main else ""
-    project_template = project_template_cljs if ext == '.cljs' else project_template_clj.format(project_main)
-    build_cmd = 'LEIN_ROOT=1 lein jar' if ext == '.clj' else 'lein cljsbuild once debug'
-    is_clj = ext == '.clj'
-    is_cljs = ext == '.cljs'
+    project_template = template.format(project_main)
+    build_cmd = 'LEIN_ROOT=1 lein jar' if is_clj else 'lein cljsbuild once debug'
 
     genrule(name = name,
-            srcs = src + tests,
-            bash = 'mkdir -p $OUT/{{src,test}}/{0} &&'.format(ns) +
-            'for d in $SRCS; do if [[ -d $d ]]; then rsync -r $d/ $OUT/src; fi; done && ' +
-            'for f in $SRCS; do if [[ -f $f ]]; then rsync -r $f $OUT/src/{0}; fi; done &&'.format(ns) +
-
-            ('&&'.join(map(lambda d: 'rsync -r --remove-source-files $OUT/src/{0}/{1} $OUT/test/{0}'.format(ns,d),tests)) if len(tests) else 'true') + '&&' +
-            ('&&'.join(map(lambda d: 'rsync -r $(location ' + d + ')/src/ $OUT/test',test_modules)) if len(test_modules) else 'true') + '&&' +
-
+            srcs = src,
+            bash = 'mkdir -p $OUT/{src,test} &&' +
+            'for f in $SRCS; do path=`grep -Eo "\(\s?ns\s+[a-z\.-]+" $f | sed -e "s/(ns[[:space:]]//; s/\.[^\.]*$//; s/\./\//g"` && mkdir -p $OUT/src/$path && cp $f $OUT/src/$path/; done &&' +
             ('&&'.join(map(lambda d: 'rsync -r --prune-empty-dirs $(location ' + d + ')/src/ $OUT/src',modules)) if len(modules) else 'true') + '&&' +
             ('&&'.join(map(lambda d: 'cat $(location ' + d + ')/deps >> $OUT/deps',modules)) if len(modules) else 'true') + '&&' +
             ('&&'.join(map(lambda d: 'echo ' + d.replace('"','\\"') + ' >> $OUT/deps',deps)) if len(deps) else 'true') + '&&' +
             'name=' + name + ' &&' +
             'deps=`cat $OUT/deps | sort --unique` &&' +
-            'cat > $OUT/project.clj <<EOL\n' + project_template + '\nEOL\n\n ' +
-            'cd $OUT &&' + build_cmd,
+            'cat > $OUT/project.clj <<EOL\n' + project_template + '\nEOL\n\n ',
             out = 'build',
             visibility = ['PUBLIC'])
 
+    genrule(name = name + '_build',
+            srcs = [],
+            bash = 'cd $(location :{0}) && {1} && cp -r target $OUT'.format(name,build_cmd),
+            out = 'build')
+
+    if len(tests):
+        genrule(name = name + '_build_test',
+                srcs = tests,
+                bash = 'mkdir -p $OUT/test &&' +
+                'for f in $SRCS; do path=`grep -Eo "\(\s?ns\s+[a-z\.-]+" $f | sed -e "s/(ns[[:space:]]//; s/\.[^\.]*$//; s/\./\//g"` && mkdir -p $OUT/test/$path && cp $f $OUT/test/$path/; done &&' +
+                'rsync -r $(location :{0})/ $OUT/ && cd $OUT && {1}'.format(name,build_cmd),
+                out = 'build_test')
+
+        sh_test(name = name + '_test',
+                test = target('clj_test.sh') if is_clj else target('cljs_test.sh'),
+                args = ['$(location :{0})'.format(name + '_build_test')],
+                deps = [':' + name + '_build_test'])
+
     if main and is_clj:
-        genrule(name=name +'.release',
-                srcs = glob(['**/*.*'], excludes = ['BUCK']),
-                bash = 'cd $(location :{0}) && LEIN_ROOT=1 lein uberjar && cp target/*-standalone.jar $OUT'.format(name),
+        genrule(name=name +'_release',
+                srcs = [],
+                bash = 'cp -r $(location :{0}) . && cd build && LEIN_ROOT=1 lein uberjar && echo $PWD >> /tmp/f && ls -l target >> /tmp/f && cp target/*-standalone.jar $OUT'.format(name),
                 out = name + '.jar')
     if main and is_cljs:
-        genrule(name=name + '.release',
-                srcs = glob(['**/*.*'], excludes = ['BUCK']),
-                bash = 'cd $(location :{0}) && lein cljsbuild once release && cp target/cljsbuild-main.js $OUT'.format(name),
+        genrule(name=name + '_release',
+                srcs = [],
+                bash = 'cp -r $(location :{0}) . && cd build && lein cljsbuild once release && cp release/{0}.js $OUT'.format(name),
                 out = name + '.js')
 
-    if len(tests) and is_clj:
-        sh_test(name = name + '.test',
-                test = target('clj_test.sh'),
-                args = ['$(location :{0})'.format(name)],
-                deps = [':' + name])
-    if len(tests) and is_cljs:
-        sh_test(name = name + '.test',
-                test = target('cljs_test.sh'),
-                args = ['$(location :{0})'.format(name)],
-                deps = [':' + name])
+def clj_module(name,src=None,modules=[],deps=[],tests=[],main=None):
+    template = """(defproject $name "0.0.1"
+  :dependencies [$deps]
+  {0}
+  :source-paths ["src"])"""
+    module(name,'.clj',src,ensure_list(modules) + [target('clojure')],deps,tests,main,template)
 
-def clj_module(name,src=None,ns='',modules=[],deps=[],tests=[],test_modules=[],main=None):
-    module(name,'.clj',src,ns,modules + [target('clojure')], deps,tests,test_modules,main)
-
-def cljs_module(name,src=None,ns='',modules=[],deps=[],tests=[],test_modules=[],main=None):
+def cljs_module(name,src=None,modules=[],deps=[],tests=[],main=None):
+    template = """(defproject $name "0.0.1"
+:dependencies [$deps]
+:plugins [[lein-cljsbuild "1.1.2"]
+          [lein-doo "0.1.6"]]
+:source-paths ["src" "test"]
+:cljsbuild {{:builds {{:debug {{:source-paths ["src" "test"]
+                             :compiler {{:optimizations :simple
+                                        :output-dir "target"
+                                        :output-to "target/$name.js"}}}}
+                     :integration {{:source-paths ["src" "test"]
+                                   :compiler {{:optimizations :advanced
+                                              :output-dir "integ"
+                                              :output-to "integ/$name.min.js"}}}}
+                     :release {{:source-paths ["src"]
+                               :compiler {{:optimizations :advanced
+                                          :output-dir "release"
+                                          :output-to "release/$name.js"}}}}}}}})"""
     def_deps = ['[figwheel-sidecar "0.5.0-6"]',
-                   '[com.cemerick/piggieback "0.2.1"]',
-                   '[lein-doo "0.1.6"]']
-    module(name,'.cljs',src,ns,modules + [target('clojurescript')],deps,tests,test_modules,main)
+                '[com.cemerick/piggieback "0.2.1"]',
+                '[lein-doo "0.1.6"]']
+    module(name,'.cljs',src,ensure_list(modules) + [target('clojurescript')],deps,tests,main,template)
 
-cljc_module = cljs_module
+def cljc_module(name,src=None,modules=[],deps=[],tests=[],main=None):
+    clj_module(name,src if src else name.replace('-','_') + '.cljc',modules,deps,tests,main)
+    cljs_module(name+'_cljs',src if src else name.replace('-','_') + '.cljc',modules,deps,tests,main)
+
+def clj_test(name,src=None,modules=[],deps=[]):
+    clj_module('test_' + name,None,modules,deps,src,None)
+
+def cljs_test(name,src=None,modules=[],deps=[]):
+    cljs_module('test_' + name,None,modules,deps,src,None)
+
+def cljc_test(name,src=None,modules=[],deps=[]):
+    clj_module('test_' + name,None,modules,deps,src,None)
+    cljs_module('test_' + name + '_cljs',None,modules,deps,src,None)
