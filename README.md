@@ -14,7 +14,6 @@ Set of macroses that allow building and testing Clojure and ClojureScript using 
 ``` python
 clj_module|cljs_module(name,                 # Name of the module
                        src = None,           # List of source file which belongs to the module
-                       ns = '',              # Namespace of the module
                        modules = [],         # List of depended modules
                        deps = [],            # List of external dependencies e.g. clojars links
                        tests = [],           # List of test files
