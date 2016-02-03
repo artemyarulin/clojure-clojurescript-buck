@@ -27,7 +27,7 @@ def module(name,ext,src,modules,deps,tests,main,template):
 
     genrule(name = name + '_build',
             srcs = [],
-            bash = 'cd $(location :{0}) && {1} && cp -r target $OUT'.format(name,build_cmd),
+            bash = 'cp -r $(location :{0}) . && cd build && {1} && cp -r target $OUT'.format(name,build_cmd),
             out = 'build')
 
     if len(tests):
