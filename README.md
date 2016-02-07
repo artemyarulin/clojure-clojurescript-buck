@@ -27,7 +27,7 @@ If `main` specified - new target `release` would be created which will generate 
 
 # Example
 
-Check our [tests](tests/BUCK) and corresponding generated [output](tests/output/tests.md) from them
+Check our [tests](tests/BUCK.tests) and corresponding generated [output](tests/output/tests.md) from them
 
 ## Installation
 
