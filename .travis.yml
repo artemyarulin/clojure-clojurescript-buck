@@ -9,4 +9,5 @@ install:
   - brew install leiningen
 script:
   - mv tests/BUCK.tests tests/BUCK
+  - mkdir -p RULES/clojure-clojurescript-buck && rsync -r . RULES/clojure-clojurescript-buck
   - buck build "//..." && buck test "//..."
