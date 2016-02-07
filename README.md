@@ -1,5 +1,7 @@
 # Clojure-ClojureScript-Buck
 
+[![Build Status](https://travis-ci.org/artemyarulin/clojure-clojurescript-buck.svg?branch=master)](https://travis-ci.org/artemyarulin/clojure-clojurescript-buck)
+
 Set of macroses that allow building and testing Clojure and ClojureScript using [Buck](https://buckbuild.com) build system
 
 ## Features
