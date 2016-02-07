@@ -5,7 +5,7 @@ cache:
   - .m2
 install:
   - brew update
-  - brew install https://github.com/facebook/homebrew-fb/blob/bf709a69b61a4bb776433be1fce675a66a8644f2/buck.rb
+  - brew install https://raw.githubusercontent.com/facebook/homebrew-fb/bf709a69b61a4bb776433be1fce675a66a8644f2/buck.rb
   - brew install leiningen
 script:
   - mv tests/BUCK.tests tests/BUCK
