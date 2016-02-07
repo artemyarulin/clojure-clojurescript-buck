@@ -10,7 +10,7 @@ def module(name,ext,src,modules,deps,tests,main,template):
     src, modules, deps, tests = map(ensure_list, [src,modules,deps,tests])
     project_main  = ":main {0}\n  :aot [{0}]".format(main) if main else ""
     project_template = template.format(project_main)
-    build_cmd = 'LEIN_ROOT=1 lein jar' if is_clj else 'lein cljsbuild once debug'
+    build_cmd = 'LEIN_ROOT=1 lein jar' if is_clj else 'LEIN_ROOT=1 lein cljsbuild once debug'
 
     genrule(name = name,
             srcs = src,
@@ -51,7 +51,7 @@ def module(name,ext,src,modules,deps,tests,main,template):
     if main and is_cljs:
         genrule(name=name + '_release',
                 srcs = [],
-                bash = 'cp -r $(location :{0}) . && cd build && lein cljsbuild once release && cp release/{0}.js $OUT'.format(name),
+                bash = 'cp -r $(location :{0}) . && cd build && LEIN_ROOT=1 lein cljsbuild once release && cp release/{0}.js $OUT'.format(name),
                 out = name + '.js')
 
 def clj_module(name,src=None,modules=[],deps=[],tests=[],main=None):

@@ -6,5 +6,5 @@ tests=`(cd test && find . -type f ! -name runner.cljs | sed -e "s/.cljs//; s/.cl
 
 echo "(ns test.runner (:require [doo.runner :refer-macros [doo-all-tests]] \
                                  $tests)) (doo-all-tests)" > test/runner.cljs
-lein doo phantom debug once
-lein doo phantom integration once
+LEIN_ROOT=1 lein doo phantom debug once
+LEIN_ROOT=1 lein doo phantom integration once
