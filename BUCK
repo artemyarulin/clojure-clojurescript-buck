@@ -13,7 +13,8 @@ module(name = 'clojure',
        deps = ['[org.clojure/clojure "1.8.0"]'],
        tests = [],
        main = None,
-       template = '(defproject clojure "0.0.1")')
+       template = '(defproject clojure "0.0.1")',
+       resources = [])
 
 clj_module(name = 'clojurescript',
            src=[],
