@@ -93,7 +93,7 @@ def cljs_module(name,src=None,modules=[],deps=[],tests=[],main=None,resources=[]
     def_deps = ['[figwheel-sidecar "0.5.0-5"]',
                 '[com.cemerick/piggieback "0.2.1"]',
                 '[lein-doo "0.1.6"]']
-    module(name,'.cljs',src,ensure_list(modules) + [target('clojurescript')],def_deps + deps,tests,main,template,resources)
+    module(name,'.cljs',src,ensure_list(modules) + [target('clojurescript')],def_deps + ensure_list(deps),tests,main,template,resources)
 
 def cljc_module(name,src=None,modules=[],deps=[],tests=[],main=None,resources=[]):
     clj_module(name,src if src else name.replace('-','_') + '.cljc',modules,deps,tests,main,resources)
