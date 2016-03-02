@@ -1,9 +1,9 @@
-export_file('clj_test.sh',
-            'clj_test.sh',
+export_file(name = 'clj_test.sh',
+            out = 'clj_test.sh',
             visibility = ['PUBLIC'])
 
-export_file('cljs_test.sh',
-            'cljs_test.sh',
+export_file(name = 'cljs_test.sh',
+            out = 'cljs_test.sh',
             visibility = ['PUBLIC'])
 
 module(name = 'clojure',
