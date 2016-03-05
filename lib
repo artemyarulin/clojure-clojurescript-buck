@@ -99,12 +99,12 @@ def cljc_module(name,src=None,modules=[],deps=[],tests=[],main=None,resources=[]
     clj_module(name,src if src else name.replace('-','_') + '.cljc',modules,deps,tests,main,resources)
     cljs_module(name+'_cljs',src if src else name.replace('-','_') + '.cljc',modules,deps,tests,main,resources)
 
-def clj_test(name,src=None,modules=[],deps=[]):
-    clj_module('test_' + name,None,modules,deps,src,None)
+def clj_test(name,tests=None,modules=[],deps=[]):
+    clj_module('test_' + name,[],modules,deps,tests if tests else [name + '.clj'],None)
 
-def cljs_test(name,src=None,modules=[],deps=[]):
-    cljs_module('test_' + name,None,modules,deps,src,None)
+def cljs_test(name,tests=None,modules=[],deps=[]):
+    cljs_module('test_' + name,[],modules,deps,tests if tests else [name + '.cljs'],None)
 
-def cljc_test(name,src=None,modules=[],deps=[]):
-    clj_module('test_' + name,None,modules,deps,src,None)
-    cljs_module('test_' + name + '_cljs',None,modules,deps,src,None)
+def cljc_test(name,src=[],modules=[],deps=[]):
+    clj_module('test_' + name,[],modules,deps,tests if tests else [name + '.cljc'],None)
+    cljs_module('test_' + name + '_cljs',[],modules,deps,tests if tests else [name + '.cljc'],None)
