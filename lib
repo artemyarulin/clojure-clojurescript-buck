@@ -76,18 +76,26 @@ def cljs_module(name,src=None,modules=[],deps=[],tests=[],main=None,resources=[]
 :cljsbuild {{:builds {{:repl {{:source-paths ["src" "test"]
                                :figwheel true
                                :compiler {{:main "$main"
+                                           :language-in :ecmascript5
+                                           :language-out :ecmascript5
                                            :asset-path "out"
                                            :output-to "resources/$name.js"}}}}
                        :debug {{:source-paths ["src" "test"]
                                 :compiler {{:optimizations :simple
+                                            :language-in :ecmascript5
+                                            :language-out :ecmascript5
                                             :output-dir "target"
                                             :output-to "target/$name.js"}}}}
                        :integration {{:source-paths ["src" "test"]
                                       :compiler {{:optimizations :advanced
+                                                  :language-in :ecmascript5
+                                                  :language-out :ecmascript5
                                                   :output-dir "integ"
                                                   :output-to "integ/$name.min.js"}}}}
                        :release {{:source-paths ["src"]
                                   :compiler {{:optimizations :advanced
+                                              :language-in :ecmascript5
+                                              :language-out :ecmascript5
                                               :output-dir "release"
                                               :output-to "release/$name.js"}}}}}}}})"""
     def_deps = ['[figwheel-sidecar "0.5.0-5"]',
