@@ -37,7 +37,7 @@ def module(name,ext,src,modules,deps,tests,main,template,resources):
                 srcs = tests,
                 bash = 'mkdir -p $OUT/test &&' +
                 'for f in $SRCS; do path=`grep -Eo "\(\s?ns\s+[a-z\.-]+" $f | sed -e "s/(ns[[:space:]]//; s/\.[^\.]*$//; s/\./\//g"` && mkdir -p $OUT/test/$path && cp $f $OUT/test/$path/; done &&' +
-                'rsync -r $(location :{0})/ $OUT/ && cd $OUT && {1}'.format(name,build_cmd),
+                'rsync -r $(location :{0})/ $OUT/ && cd $OUT'.format(name),
                 out = 'build_test')
 
         sh_test(name = name + '_test',
@@ -81,7 +81,8 @@ def cljs_module(name,src=None,modules=[],deps=[],tests=[],main=None,resources=[]
                                            :asset-path "out"
                                            :output-to "resources/$name.js"}}}}
                        :debug {{:source-paths ["src" "test"]
-                                :compiler {{:optimizations :simple
+                                :compiler {{:optimizations :whitespace
+                                            :parallel-build true
                                             :language-in :ecmascript5
                                             :language-out :ecmascript5
                                             :output-dir "target"
