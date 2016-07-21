@@ -64,10 +64,12 @@ def clj_module(name,src=None,modules=[],deps=[],tests=[],main=None,resources=[])
     module(name,'.clj',src,ensure_list(modules) + [target('clojure')],deps,tests,main,template,resources)
 
 def cljs_module(name,src=None,modules=[],deps=[],tests=[],main=None,resources=[]):
+    resources.append('$(location ' + target('index.html') +')')
+
     template = """(defproject $name "0.0.1"
 :dependencies [$deps]
-:plugins [[lein-cljsbuild "1.1.2"]
-          [lein-figwheel "0.5.0-5"]
+:plugins [[lein-cljsbuild "1.1.3"]
+          [lein-figwheel "0.5.4-7"]
           [lein-doo "0.1.6"]]
 :source-paths ["src" "test"]
 :repl-options {{:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]
@@ -75,11 +77,11 @@ def cljs_module(name,src=None,modules=[],deps=[],tests=[],main=None,resources=[]
 :figwheel  {{:http-server-root ""}}
 :cljsbuild {{:builds {{:repl {{:source-paths ["src" "test"]
                                :figwheel true
-                               :compiler {{:main "$main"
-                                           :language-in :ecmascript5
+                               :compiler {{:language-in :ecmascript5
                                            :language-out :ecmascript5
-                                           :asset-path "out"
-                                           :output-to "resources/$name.js"}}}}
+                                           :asset-path "js"
+                                           :output-dir "resources/public/js"
+                                           :output-to "resources/public/module.js"}}}}
                        :debug {{:source-paths ["src" "test"]
                                 :compiler {{:optimizations :whitespace
                                             :parallel-build true
@@ -99,7 +101,7 @@ def cljs_module(name,src=None,modules=[],deps=[],tests=[],main=None,resources=[]
                                               :language-out :ecmascript5
                                               :output-dir "release"
                                               :output-to "release/$name.js"}}}}}}}})"""
-    def_deps = ['[figwheel-sidecar "0.5.0-5"]',
+    def_deps = ['[figwheel-sidecar "0.5.4-7"]',
                 '[com.cemerick/piggieback "0.2.1"]',
                 '[lein-doo "0.1.6"]']
     module(name,'.cljs',src,ensure_list(modules) + [target('clojurescript')],def_deps + ensure_list(deps),tests,main,template,resources)

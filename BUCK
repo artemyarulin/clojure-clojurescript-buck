@@ -6,6 +6,10 @@ export_file(name = 'cljs_test.sh',
             out = 'cljs_test.sh',
             visibility = ['PUBLIC'])
 
+export_file(name = 'index.html',
+            out = 'index.html',
+            visibility = ['PUBLIC'])
+
 module(name = 'clojure',
        ext = '.clj',
        src = [],
@@ -18,4 +22,4 @@ module(name = 'clojure',
 
 clj_module(name = 'clojurescript',
            src=[],
-           deps = ['[org.clojure/clojurescript "1.7.228"]'])
+           deps = ['[org.clojure/clojurescript "1.9.89"]'])
