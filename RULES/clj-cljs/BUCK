@@ -1,0 +1,10 @@
+export_file(name = 'build.cljs',
+            out = 'build.cljs',
+            visibility = ['PUBLIC'])
+
+genrule(name = 'build',
+        srcs = [],
+        bash = 'echo "planck $(location //RULES/clj-cljs:build.cljs) \$@" > $OUT && chmod +x $OUT',
+        out = 'build.sh',
+        executable = True,
+        visibility = ['PUBLIC'])

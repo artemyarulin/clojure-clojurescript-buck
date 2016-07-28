@@ -1,0 +1,3 @@
+clj_module('a',tests='a_test.clj')
+cljs_module('b',tests='b_test.cljs')
+cljc_module('c',tests='c_test.cljc')
