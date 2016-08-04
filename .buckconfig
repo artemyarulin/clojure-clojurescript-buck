@@ -1,2 +1,2 @@
 [buildfile]
-  includes = //RULES/clj-cljs/lib.py
+  includes = //RULES/clj-cljs-config/config.py

@@ -1,45 +1,66 @@
-;; planck build file
 (ns build.core
   (:require [planck.core :as core]
             [planck.io :as io]
             [planck.shell :as shell]
-            [cljs.tools.reader :as reader]))
+            [cljs.tools.reader :as reader]
+            [clojure.string :as string]))
 
-(defn log [s]
-  (core/spit "/tmp/buck-clj.log" (str "[" (.toISOString (js/Date.)) "] " s "\n") :append true))
-
+;; Helpers
 (def make-dirs (partial shell/sh "mkdir" "-p"))
+(defn copy [from to] (shell/sh "cp" "-r" from to) (println "Copy:" "cp" "-r" from to))
+(defn path-join [& args] (string/join "/" args))
+(defn time-now [] (str "[" (.toISOString (js/Date.)) "] "))
+(defn log [s] (core/spit "/tmp/buck-clj.log" (str (time-now) s "\n") :append true) (println s))
 
-(defn ns-decl? [form]
-  (and (list? form)
-       (= 'ns (first form))
-       (< 1 (count form))))
 
-(defn parse-ns [form]
-  (cond
-    (ns-decl? form) (-> form str)
-    (list? form) (some parse-ns form)))
+"a" "a-clj"
+
+(defn organize-sources [from to]
+  (letfn [(is-ns? [form] (and (list? form) (= (first form) 'ns) (< 1 (count form))))
+          (parse-ns [form] (cond (is-ns? form) (-> form second str)
+                                 (list? form) (some parse-ns form)))
+          (path-for-ns [ns] (-> ns (string/split ".") butlast (#(apply path-join to %))))
+          (copy-source [source-file path-to]
+            (let [source-path (.-path source-file)
+                  source-name (->> source-path (string/split "/") last)]
+              (make-dirs path-to)
+              (copy source-path (path-join path-to source-name))))]
+    (->> (core/file-seq from)
+         (filter #(not (io/directory? %)))
+         (mapv #(->> %
+                     core/slurp
+                     (reader/read-string {:read-cond :allow :features #{:clj :cljs}})
+                     parse-ns
+                     path-for-ns
+                     (copy-source %))))))
 
 (defn parse-args [args]
-  {:type (first args)
-   :task (second args)
-   :src (nth args 2)
-   :out (last args)})
+  (let [info-file (-> args first core/slurp string/trim)]
+    (zipmap [:name :type :main :src :out :task]
+            (conj (string/split info-file ";") (second args)))))
 
-(defn build [run-options]
-  (let [args (parse-args run-options)
-        _ (log (str "Running: " args))]
-    (case (:task args)
-      "build" (do
-                (make-dirs (:out args))
-                (core/spit (str (:out args) "/file.out" )
-                           (str args)))
-      "repl" (do
-               (println "NRepl listening on 55444")
-               (println (shell/sh "lein" "repl" ":headless" ":port" "55444")))
-      "test" (do
-               (println "Nope, wrong test")
-               (core/exit 99)))
-    (log "Done")))
+(defn organize-deps [deps-file]
+  (letfn [(read-subdeps [path]
+            (let [subdep-file (path-join path "deps")]
+              (if (io/file-attributes subdep-file)
+                (-> subdep-file core/slurp string/split-lines)
+                [])))]
+    (->> (core/slurp deps-file)
+         string/split-lines
+         (map read-subdeps)
+         (apply concat)
+         distinct
+         (string/join "\n")
+         (core/spit deps-file))))
 
-(build core/*command-line-args*)
+(defn merge-deps-src [deps-file to]
+  (->> (core/slurp deps-file)
+       string/split-lines
+       (mapv #(copy (path-join % "src") to))))
+
+(let [{:keys [src out task]} (parse-args core/*command-line-args*)]
+  (case task
+    "build" (do
+              (organize-sources src (path-join out "src"))
+              (merge-deps-src (path-join out "deps") out)
+              (organize-deps (path-join out "deps")))))

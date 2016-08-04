@@ -1,0 +1,6 @@
+# Project files
+for name in ['project-clj.clj','project-cljs.clj']:
+    export_file(name = name.split('.')[0],
+                src = name,
+                out = 'project.clj',
+                visibility = ['PUBLIC'])
