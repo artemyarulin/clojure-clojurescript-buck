@@ -4,9 +4,8 @@ cache:
   - /Library/Caches/Homebrew
   - .m2
 install:
-  - brew update
-  - brew install https://raw.githubusercontent.com/facebook/homebrew-fb/bf709a69b61a4bb776433be1fce675a66a8644f2/buck.rb
-  - brew install leiningen
-  - brew install phantomjs
+  - brew install https://raw.githubusercontent.com/facebook/homebrew-fb/master/buck.rb
+  - brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/master/Formula/leiningen.rb
+  - brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/master/Formula/phantomjs.rb
 script:
   - buck build "//..." | tee /dev/null && buck test "//..." | tee /dev/null
