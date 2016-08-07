@@ -18,6 +18,7 @@ def cljs_module(name,src=None,modules=[],main=None,tests=[]):
     clj_cljs_module(ext = 'cljs',
                     project_file = '//RULES/clj-cljs-config:project-cljs',
                     builder = '//RULES/clj-cljs:builder',
+                    resources = '//RULES/clj-cljs-config:figwheel-index',
                     name = name,
                     src = src,
                     modules = ensure_list(modules) + [target('org.clojure/clojure'),

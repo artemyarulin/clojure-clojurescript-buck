@@ -4,3 +4,9 @@ for name in ['project-clj.clj','project-cljs.clj']:
                 src = name,
                 out = 'project.clj',
                 visibility = ['PUBLIC'])
+
+# Figwheel starting point
+export_file(name = 'figwheel-index',
+            src = 'figwheel-index.html',
+            out = 'index.html',
+            visibility = ['PUBLIC'])
