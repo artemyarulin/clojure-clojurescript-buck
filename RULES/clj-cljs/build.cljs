@@ -40,10 +40,7 @@
             (conj (string/split info-file ";") (second args)))))
 
 (defn organize-deps [deps-file]
-  (letfn [(format-dep [dep]
-            (let [[name ver] (string/split dep " ")]
-              (str "[" name " \"" ver "\"]")))
-          (read-subdeps [path]
+  (letfn [(read-subdeps [path]
             (let [subdep-file (path-join path "deps")]
               (if (io/file-attributes subdep-file)
                 (-> subdep-file core/slurp string/split-lines)
@@ -53,7 +50,6 @@
          string/split-lines
          (map read-subdeps)
          (apply concat)
-         (map format-dep)
          distinct
          (string/join "\n")
          (core/spit deps-file))))
@@ -72,32 +68,32 @@
         (#(core/spit project-file %)))))
 
 (defn ensure-main-exists [main path type]
-  (if (string/blank? main)
-    (let [def-main "module.core"
-          find-all-namespaces (fn[path]
-                                (->> (shell/sh "find" path "-type" "f" "-name" "*.clj*")
-                                     :out
-                                     string/split-lines
-                                     (map #(-> %
-                                               (string/replace path "")
-                                               (string/replace "/" ".")
-                                               (string/replace "_" "-")
-                                               (string/split ".")
-                                               butlast
-                                               rest))
-                                     (map #(string/join "." %))))
-          main-file (fn[namespaces]
-                      (str "(ns " def-main " (:require "
-                           (string/join "\n" (map #(str "[" % "]") namespaces))
-                           "))"))
-          main-path (path-join path "src" "module")]
-      (make-dirs main-path)
-      (->> (concat (find-all-namespaces (path-join path "src"))
-                   (find-all-namespaces (path-join path "test")))
-           main-file
-           (core/spit (path-join main-path (str "core." type))))
-      def-main)
-    main))
+  (let [def-main "module.core"
+        find-all-namespaces (fn[path]
+                              (->> (shell/sh "find" path "-type" "f" "-name" "*.clj*")
+                                   :out
+                                   string/split-lines
+                                   (map #(-> %
+                                             (string/replace path "")
+                                             (string/replace "/" ".")
+                                             (string/replace "_" "-")
+                                             (string/split ".")
+                                             butlast
+                                             rest))
+                                   (map #(string/join "." %))))
+        main-file (fn[namespaces]
+                    (str "(ns " def-main " (:require "
+                         (string/join "\n" (map #(str "[" % "]") namespaces))
+                         "))"))
+        main-path (path-join path "src" "module")]
+    (make-dirs main-path)
+    (->> (concat (find-all-namespaces (path-join path "src"))
+                 (find-all-namespaces (path-join path "test")))
+         main-file
+         (core/spit (path-join main-path (str "core." type))))
+    (if (string/blank? main)
+      def-main
+      main)))
 
 (let [{:keys [src out type task name main]} (parse-args core/*command-line-args*)]
   (case task

@@ -24,42 +24,42 @@ clj_module('e-clj', tests = 'e_test.clj')
 cljc_module('e-cljc', tests = 'e_test.cljc')
 
 # # Main
-# cljs_module('f-cljs', main = 'f.core.f-cljs')
-# clj_module('f-clj', main = 'f.core.f-clj')
-# cljc_module('f-cljc', main = 'f.core.f-cljc')
+cljs_module('f-cljs', main = 'f.core.f-cljs')
+clj_module('f-clj', main = 'f.core.f-clj')
+cljc_module('f-cljc', main = 'f.core.f-cljc')
 
 # # Advanced
-# cljs_module('g-cljs',
-#            modules = [':a-cljs',
-#                       ':b-cljs',
-#                       ':c-cljs',
-#                       ':d-cljs',
-#                       ':e-cljc'],
-#            deps = ['[org.clojure/data.json "0.2.6"]',
-#                    '[aleph "0.4.1-beta2"]',
-#                    '[org.omcljs/om "1.0.0-alpha28"]'],
-#            tests = ['g1_test.cljs','g2_test.cljs'],
-#            main = 'g.core.g-cljs')
+cljs_module('g-cljs',
+            modules = [':a-cljs',
+                       ':b-cljs',
+                       ':c-cljs',
+                       ':d-cljs',
+                       ':e-cljc',
+                       '//ext:org.clojure/data.json',
+                       '//ext:aleph',
+                       '//ext:org.omcljs/om'],
+           tests = ['g1_test.cljs','g2_test.cljs'],
+           main = 'g.core.g-cljs')
 
-# clj_module('g-clj',
-#            modules = [':a-clj',
-#                       ':b-clj',
-#                       ':c-clj',
-#                       ':d-clj',
-#                       ':e-cljc'],
-#            deps = ['[org.clojure/data.json "0.2.6"]',
-#                    '[aleph "0.4.1-beta2"]'],
-#            tests = ['g1_test.clj','g2_test.clj'],
-#            main = 'g.core.g-clj')
+clj_module('g-clj',
+           modules = [':a-clj',
+                      ':b-clj',
+                      ':c-clj',
+                      ':d-clj',
+                      ':e-cljc',
+                      '//ext:org.clojure/data.json',
+                      '//ext:aleph'],
+           tests = ['g1_test.clj','g2_test.clj'],
+           main = 'g.core.g-clj')
 
-# cljc_module('g-cljc',
-#            modules = [':a-cljc',
-#                       ':b-cljc',
-#                       ':c-cljc',
-#                       ':d-cljc',
-#                       ':e-cljc'],
-#            deps = ['[org.clojure/data.json "0.2.6"]',
-#                    '[aleph "0.4.1-beta2"]',
-#                    '[org.omcljs/om "1.0.0-alpha28"]'],
-#            tests = ['g1_test.cljc','g2_test.cljc'],
-#            main = 'g.core.g-cljc')
+cljc_module('g-cljc',
+            modules = [':a-cljc',
+                       ':b-cljc',
+                       ':c-cljc',
+                       ':d-cljc',
+                       ':e-cljc',
+                       '//ext:org.clojure/data.json',
+                       '//ext:aleph',
+                       '//ext:org.omcljs/om'],
+            tests = ['g1_test.cljc','g2_test.cljc'],
+            main = 'g.core.g-cljc')

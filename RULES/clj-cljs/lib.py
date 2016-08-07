@@ -3,7 +3,7 @@ from functools import partial
 def ensure_list(i):
     return i if isinstance(i,list) else [i]
 
-def clj_cljs_module(ext,project_file,builder,name,src=None,modules=[],main=None,tests=[],resources=[]):
+def clj_cljs_module(ext,project_file,builder,tester,name,src=None,modules=[],main=None,tests=[],resources=[]):
     src = src or [name.replace('-','_') + '.' + ext]
     modules,tests,resources= map(ensure_list,[modules,tests,resources])
 
@@ -25,7 +25,7 @@ def clj_cljs_module(ext,project_file,builder,name,src=None,modules=[],main=None,
                    'cp -r $(location :{0})/src $OUT && '.format(name) +
                    'cp -r $(location :{0})/deps $OUT && '.format(name) +
                    'cp -r $(location :{0})/resources $OUT && '.format(name) +
-                   'cp $(location {0}) $OUT && '.format(project_file) +
+                   'cp $(location {0}) $OUT/project.clj && '.format(project_file) +
                    '$(location {0}) $OUT/info test'.format(builder),
             out = 'build')
 
@@ -36,15 +36,16 @@ def clj_cljs_module(ext,project_file,builder,name,src=None,modules=[],main=None,
             executable = True,
             out = 'build')
 
-        # # Actual test task
-        # sh_test(name = full_name + '-test',
-        #         test = test,
-        #         args = [ext,'integrations' if int_tests else 'unit','$(location :{0}'.format('__' + full_name)],
-        #         deps = [':__' + full_name])
+    if tests:
+        # Actual test task
+        sh_test(name = name + '-test',
+                test = tester,
+                args = ['$(location :{0})'.format('__' + name)],
+                deps = [':__' + name])
 
 def ext_dep(name):
     genrule(name = name.split()[0],
             srcs = [],
-            bash = 'mkdir -p $OUT/{{src,resources}} && echo "{0}" > $OUT/deps'.format(name),
+            bash = 'mkdir -p $OUT/{{src,resources}} && echo "[{0} \\"{1}\\"]" > $OUT/deps'.format(*name.split()),
             out = 'build',
             visibility = ['PUBLIC'])
