@@ -15,22 +15,18 @@ def clj_cljs_module(ext,project_file,builder,name,src=None,modules=[],main=None,
                    ('&&'.join(map(lambda d: 'echo "$(location ' + d + ')" >> $OUT/deps',modules)) if len(modules) else 'true') + '&& ' +
                    '$(location {0}) $OUT/info build'.format(builder),
             out = 'build')
-# # info
-# $name;$type;main;$SRCDIR;$OUT
-# $modules;
-# $resources;
 
-# $tests;
-# $int_tests;
-
-
-
-
-        # Intermediate task - gathers all source and test files together
-        # genrule(name = '__' + full_name,
-        #         srcs = tests + int_tests,
-        #         bash = '$(location {0}) {1} {2} $SRCDIR $OUT'.format(build,ext,"build"),
-        #         out = 'build')
+    # Intermediate task - gathers all source and test files together
+    if tests:
+        genrule(name = '__' + name,
+                srcs = tests,
+                bash = 'mkdir -p $OUT && ' +
+                       'echo "{name};{type};{main};$SRCDIR;$OUT;" > $OUT/info && '.format(name=name,type=ext,main=main or "") +
+                       'cp -r $(location :{0})/src $OUT && '.format(name) +
+                       'cp -r $(location :{0})/deps $OUT && '.format(name) +
+                       'cp $(location {0}) $OUT && '.format(project_file) +
+                       '$(location {0}) $OUT/info test'.format(builder),
+                out = 'build')
 
         # REPL task
         # genrule(name = full_name + '-repl',

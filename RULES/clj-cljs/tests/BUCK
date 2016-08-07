@@ -8,20 +8,20 @@ cljs_module('b-cljs', modules = ':a-cljs')
 clj_module('b-clj', modules = ':a-clj')
 cljc_module('b-cljc', modules = ':a-cljc')
 
-# # Deps
+# Deps
 cljs_module('c-cljs', modules = '//ext:org.clojure/data.json')
 clj_module('c-clj', modules = '//ext:org.clojure/data.json')
 cljc_module('c-cljc', modules = '//ext:org.clojure/data.json')
 
-# # # Src
-# cljs_module('d-cljs', src = ['d1.cljs','d2.cljs'])
-# clj_module('d-clj', src = ['d1.clj','d2.clj'])
-# cljc_module('d-cljc', src = ['d1.cljc','d2.cljc'])
+# Src
+cljs_module('d-cljs', src = ['d1.cljs','d2.cljs'])
+clj_module('d-clj', src = ['d1.clj','d2.clj'])
+cljc_module('d-cljc', src = ['d1.cljc','d2.cljc'])
 
-# # Tests
-# cljs_module('e-cljs', tests = 'e_test.cljs')
-# clj_module('e-clj', tests = 'e_test.clj')
-# cljc_module('e-cljc', tests = 'e_test.cljc')
+# Tests
+cljs_module('e-cljs', tests = 'e_test.cljs')
+clj_module('e-clj', tests = 'e_test.clj')
+cljc_module('e-cljc', tests = 'e_test.cljc')
 
 # # Main
 # cljs_module('f-cljs', main = 'f.core.f-cljs')
