@@ -1,0 +1,12 @@
+# Project files
+for name in ['project-clj.clj','project-cljs.clj']:
+    export_file(name = name.split('.')[0],
+                src = name,
+                out = name,
+                visibility = ['PUBLIC'])
+
+# Figwheel starting point
+export_file(name = 'figwheel-index',
+            src = 'figwheel-index.html',
+            out = 'index.html',
+            visibility = ['PUBLIC'])

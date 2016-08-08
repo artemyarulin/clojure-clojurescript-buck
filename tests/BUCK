@@ -1,0 +1,65 @@
+#Simplest
+cljs_module('a-cljs')
+clj_module('a-clj')
+cljc_module('a-cljc')
+
+# Modules
+cljs_module('b-cljs', modules = ':a-cljs')
+clj_module('b-clj', modules = ':a-clj')
+cljc_module('b-cljc', modules = ':a-cljc')
+
+# Deps
+cljs_module('c-cljs', modules = '//ext:org.clojure/data.json')
+clj_module('c-clj', modules = '//ext:org.clojure/data.json')
+cljc_module('c-cljc', modules = '//ext:org.clojure/data.json')
+
+# Src
+cljs_module('d-cljs', src = ['d1.cljs','d2.cljs'])
+clj_module('d-clj', src = ['d1.clj','d2.clj'])
+cljc_module('d-cljc', src = ['d1.cljc','d2.cljc'])
+
+# Tests
+cljs_module('e-cljs', tests = 'e_test.cljs')
+clj_module('e-clj', tests = 'e_test.clj')
+cljc_module('e-cljc', tests = 'e_test.cljc')
+
+# # Main
+cljs_module('f-cljs', main = 'f.core.f-cljs')
+clj_module('f-clj', main = 'f.core.f-clj')
+cljc_module('f-cljc', main = 'f.core.f-cljc')
+
+# # Advanced
+cljs_module('g-cljs',
+            modules = [':a-cljs',
+                       ':b-cljs',
+                       ':c-cljs',
+                       ':d-cljs',
+                       ':e-cljc',
+                       '//ext:org.clojure/data.json',
+                       '//ext:aleph',
+                       '//ext:org.omcljs/om'],
+           tests = ['g1_test.cljs','g2_test.cljs'],
+           main = 'g.core.g-cljs')
+
+clj_module('g-clj',
+           modules = [':a-clj',
+                      ':b-clj',
+                      ':c-clj',
+                      ':d-clj',
+                      ':e-cljc',
+                      '//ext:org.clojure/data.json',
+                      '//ext:aleph'],
+           tests = ['g1_test.clj','g2_test.clj'],
+           main = 'g.core.g-clj')
+
+cljc_module('g-cljc',
+            modules = [':a-cljc',
+                       ':b-cljc',
+                       ':c-cljc',
+                       ':d-cljc',
+                       ':e-cljc',
+                       '//ext:org.clojure/data.json',
+                       '//ext:aleph',
+                       '//ext:org.omcljs/om'],
+            tests = ['g1_test.cljc','g2_test.cljc'],
+            main = 'g.core.g-cljc')

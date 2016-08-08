@@ -4,11 +4,7 @@ cache:
   - /Library/Caches/Homebrew
   - .m2
 install:
-  - brew update
-  - brew install https://raw.githubusercontent.com/facebook/homebrew-fb/bf709a69b61a4bb776433be1fce675a66a8644f2/buck.rb
-  - brew install leiningen
-  - brew install phantomjs
+  - brew update && brew tap facebook/fb
+  - brew install buck leiningen phantomjs planck
 script:
-  - mv tests/BUCK.tests tests/BUCK
-  - mkdir -p RULES/clojure-clojurescript-buck && rsync -r . RULES/clojure-clojurescript-buck
-  - buck build "//..." | tee /dev/null && buck test "//..." | tee /dev/null
+  - buck build "//..." && buck test "//..."
