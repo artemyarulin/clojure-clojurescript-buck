@@ -1,2 +1,2 @@
 [buildfile]
-  includes = //RULES/clojure-clojurescript-buck/lib
+  includes = //clj-cljs-config/config.py

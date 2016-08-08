@@ -1,25 +1,25 @@
-export_file(name = 'clj_test.sh',
-            out = 'clj_test.sh',
+export_file(name = 'build.cljs',
             visibility = ['PUBLIC'])
 
-export_file(name = 'cljs_test.sh',
-            out = 'cljs_test.sh',
-            visibility = ['PUBLIC'])
+genrule(name = 'builder-planck',
+        srcs = [],
+        # HACK: If we change `build.cljs` file then `build` target would be updated, but because
+        # it will generate exactly the same output (planck script invocation is the same) then
+        # no rebuild will occur for dependent targets. Here we force it by including md5 checksum
+        # into the script file as a comment
+        bash = 'echo "planck $(location :build.cljs) \$@" > $OUT && ' +
+               'echo "#`cat $(location :build.cljs) | md5`" >> $OUT && ' +
+               'chmod +x $OUT',
+        out = 'build.sh',
+        executable = True,
+        visibility = ['PUBLIC'])
 
-export_file(name = 'index.html',
-            out = 'index.html',
-            visibility = ['PUBLIC'])
-
-module(name = 'clojure',
-       ext = '.clj',
-       src = [],
-       modules = [],
-       deps = ['[org.clojure/clojure "1.8.0"]'],
-       tests = [],
-       main = None,
-       template = '(defproject clojure "0.0.1")',
-       resources = [])
-
-clj_module(name = 'clojurescript',
-           src=[],
-           deps = ['[org.clojure/clojurescript "1.9.89"]'])
+for name in ['tester-lein-clj.sh',
+             'tester-lein-cljs-doo.sh',
+             'tester-lein-cljs-planck.sh',
+             'tester-lein-cljc-doo.sh',
+             'tester-lein-cljc-planck.sh']:
+    export_file(name = name.split('.')[0],
+                src = name,
+                out = name,
+                visibility = ['PUBLIC'])
