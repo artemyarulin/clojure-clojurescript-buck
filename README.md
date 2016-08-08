@@ -53,6 +53,6 @@ Entry point would be your [custom wrapper](RULES/clj-cljs-config/config.py) with
 
 - [lein-monolith](https://github.com/amperity/lein-monolith) from Amperity - is a Leiningen plugin to work with multiple projects inside a monorepo. Doesn't require any additional tools but Leiningen, much easier to start with, although it still uses project approach.
 
-- [https://news.ycombinator.com/item?id=11507975](Ladder) developer mentioned on HN that they have their own solution for CLJ/CLJS + Buck which looks awesome but not yet open sourced and includes some hacks in CLJS compiler.
+- [Ladder developer mentioned on HN](https://news.ycombinator.com/item?id=11507975) that they have their own solution for CLJ/CLJS + Buck which looks awesome but not yet open sourced and includes some hacks in CLJS compiler.
 
 - [make](https://www.gnu.org/software/make/) - there are no tasks that you cannot do with make. If you like bare metal - then check [version 1.0.0](https://github.com/artemyarulin/clojure-clojurescript-buck/tree/1.0.0), it was implemented with power of shell,sed,grep and regexps.
