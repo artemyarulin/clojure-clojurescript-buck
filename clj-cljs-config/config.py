@@ -3,7 +3,8 @@
 # clj-cljs-buck: Use it as an example, change it and store in your
 # repo
 
-include_defs('//RULES/clj-cljs/lib.py')
+# Import clj-cljs macroses
+include_defs('//lib.py')
 
 def ext(name):
     return '//ext:' + name

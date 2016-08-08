@@ -7,8 +7,8 @@ genrule(name = 'builder-planck',
         # it will generate exactly the same output (planck script invocation is the same) then
         # no rebuild will occur for dependent targets. Here we force it by including md5 checksum
         # into the script file as a comment
-        bash = 'echo "planck $(location //RULES/clj-cljs:build.cljs) \$@" > $OUT && ' +
-               'echo "#`cat $(location //RULES/clj-cljs:build.cljs) | md5`" >> $OUT && ' +
+        bash = 'echo "planck $(location :build.cljs) \$@" > $OUT && ' +
+               'echo "#`cat $(location :build.cljs) | md5`" >> $OUT && ' +
                'chmod +x $OUT',
         out = 'build.sh',
         executable = True,

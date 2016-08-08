@@ -1,3 +1,25 @@
+# Here we define all external dependencies for CLJ/CLJS. Right way
+# would be storing all the external sources in the monorepo but it's a
+# shortcut: With maven and clojars releases are meant to be immutable,
+# so we are safe. Just make sure you are not using SNAPSHOT version
+# which breaks the whole idea.  For testing purposes it's inside one
+# file, but I recommend to create some folder like ext and put
+# dependencies there, so it will be easy to notice that `//ext:ktoa`
+# is external module
+
+for dep in [# Default dependencies
+            'org.clojure/clojure 1.8.0',
+            'org.clojure/clojurescript 1.9.89',
+            # CLJS specifics
+            'figwheel-sidecar 0.5.4-7',
+            'com.cemerick/piggieback 0.2.1',
+            'lein-doo 0.1.6',
+            # For testing
+            'org.clojure/data.json 0.2.6',
+            'aleph 0.4.1-beta2',
+            'org.omcljs/om 1.0.0-alpha28']:
+    ext_dep(dep)
+
 #Simplest
 cljs_module('a-cljs')
 clj_module('a-clj')
@@ -9,9 +31,9 @@ clj_module('b-clj', modules = ':a-clj')
 cljc_module('b-cljc', modules = ':a-cljc')
 
 # Deps
-cljs_module('c-cljs', modules = '//ext:org.clojure/data.json')
-clj_module('c-clj', modules = '//ext:org.clojure/data.json')
-cljc_module('c-cljc', modules = '//ext:org.clojure/data.json')
+cljs_module('c-cljs', modules = ':org.clojure/data.json')
+clj_module('c-clj', modules = ':org.clojure/data.json')
+cljc_module('c-cljc', modules = ':org.clojure/data.json')
 
 # Src
 cljs_module('d-cljs', src = ['d1.cljs','d2.cljs'])
@@ -23,21 +45,21 @@ cljs_module('e-cljs', tests = 'e_test.cljs')
 clj_module('e-clj', tests = 'e_test.clj')
 cljc_module('e-cljc', tests = 'e_test.cljc')
 
-# # Main
+# Main
 cljs_module('f-cljs', main = 'f.core.f-cljs')
 clj_module('f-clj', main = 'f.core.f-clj')
 cljc_module('f-cljc', main = 'f.core.f-cljc')
 
-# # Advanced
+# Advanced
 cljs_module('g-cljs',
             modules = [':a-cljs',
                        ':b-cljs',
                        ':c-cljs',
                        ':d-cljs',
                        ':e-cljc',
-                       '//ext:org.clojure/data.json',
-                       '//ext:aleph',
-                       '//ext:org.omcljs/om'],
+                       ':org.clojure/data.json',
+                       ':aleph',
+                       ':org.omcljs/om'],
            tests = ['g1_test.cljs','g2_test.cljs'],
            main = 'g.core.g-cljs')
 
@@ -47,8 +69,8 @@ clj_module('g-clj',
                       ':c-clj',
                       ':d-clj',
                       ':e-cljc',
-                      '//ext:org.clojure/data.json',
-                      '//ext:aleph'],
+                      ':org.clojure/data.json',
+                      ':aleph'],
            tests = ['g1_test.clj','g2_test.clj'],
            main = 'g.core.g-clj')
 
@@ -58,8 +80,8 @@ cljc_module('g-cljc',
                        ':c-cljc',
                        ':d-cljc',
                        ':e-cljc',
-                       '//ext:org.clojure/data.json',
-                       '//ext:aleph',
-                       '//ext:org.omcljs/om'],
+                       ':org.clojure/data.json',
+                       ':aleph',
+                       ':org.omcljs/om'],
             tests = ['g1_test.cljc','g2_test.cljc'],
             main = 'g.core.g-cljc')

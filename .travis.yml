@@ -7,4 +7,5 @@ install:
   - brew update && brew tap facebook/fb
   - brew install buck leiningen phantomjs planck
 script:
+  - mv tests/BUCK.tests tests/BUCK
   - buck build "//..." && buck test "//..."
