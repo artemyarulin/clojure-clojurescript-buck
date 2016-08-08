@@ -7,20 +7,20 @@
 include_defs('//lib.py')
 
 def ext(name):
-    return '//ext:' + name
+    return '//tests:' + name
 
 cljs_deps = [ext('org.clojure/clojure'),
              ext('org.clojure/clojurescript'),
              ext('figwheel-sidecar'),
              ext('com.cemerick/piggieback')]
 
-builder = '//RULES/clj-cljs:builder-planck'
+builder = '//:builder-planck'
 
 def clj_module(name,src=None,modules=[],main=None,tests=[]):
     clj_cljs_module(ext = 'clj',
-                    project_file = '//RULES/clj-cljs-config:project-clj',
+                    project_file = '//clj-cljs-config:project-clj',
                     builder = builder,
-                    tester = '//RULES/clj-cljs:tester-lein-clj',
+                    tester = '//:tester-lein-clj',
                     name = name,
                     src = src,
                     modules = ensure_list(modules) + [ext('org.clojure/clojure')],
@@ -29,10 +29,10 @@ def clj_module(name,src=None,modules=[],main=None,tests=[]):
 
 def cljs_module(name,src=None,modules=[],main=None,tests=[]):
     clj_cljs_module(ext = 'cljs',
-                    project_file = '//RULES/clj-cljs-config:project-cljs',
+                    project_file = '//clj-cljs-config:project-cljs',
                     builder = builder,
-                    resources = '//RULES/clj-cljs-config:figwheel-index',
-                    tester = '//RULES/clj-cljs:tester-lein-cljs-planck',
+                    resources = '//clj-cljs-config:figwheel-index',
+                    tester = '//:tester-lein-cljs-planck',
                     name = name,
                     src = src,
                     modules = ensure_list(modules) + cljs_deps,
@@ -41,10 +41,10 @@ def cljs_module(name,src=None,modules=[],main=None,tests=[]):
 
 def cljc_module(name,src=None,modules=[],main=None,tests=[]):
     clj_cljs_module(ext = 'cljc',
-                    project_file = '//RULES/clj-cljs-config:project-cljs',
+                    project_file = '//clj-cljs-config:project-cljs',
                     builder = builder,
-                    resources = '//RULES/clj-cljs-config:figwheel-index',
-                    tester = '//RULES/clj-cljs:tester-lein-cljc-planck',
+                    resources = '//clj-cljs-config:figwheel-index',
+                    tester = '//:tester-lein-cljc-planck',
                     name = name,
                     src = src,
                     modules = ensure_list(modules) + cljs_deps,
