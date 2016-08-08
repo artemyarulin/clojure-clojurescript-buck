@@ -51,6 +51,10 @@ Entry point would be your [custom wrapper](RULES/clj-cljs-config/config.py) with
 - Create entry point file which requires all the existing module namespaces (including tests) which simplifies REPL and testing
 - Update project file with actual data
 
+## Status
+
+Foundation is solid and unlikely that API gonna change in near feature. It's a second big rewrite already so most of the edge cases should be covered. Although it still missing some important things like [Figwheel support](https://github.com/artemyarulin/clojure-clojurescript-buck/issues/19)
+
 ## Alternatives
 
 - [lein-monolith](https://github.com/amperity/lein-monolith) from Amperity - is a Leiningen plugin to work with multiple projects inside a monorepo. Doesn't require any additional tools but Leiningen, much easier to start with, although it still uses project approach.
