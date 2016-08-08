@@ -1,3 +1,9 @@
+# This files defines all external dependencies for CLJ/CLJS. Right way
+# would be storing all the external sources in the monorepo but I've
+# decided to simplify it a bit: With maven and clojars releases are
+# meant to be immutable, so we safe. Just make sure you are not using
+# SNAPSHOT version which breaks the whole idea
+
 for dep in [# Default dependencies
             'org.clojure/clojure 1.8.0',
             'org.clojure/clojurescript 1.9.89',

@@ -7,15 +7,13 @@
 
 ;; Helpers
 (def make-dirs (partial shell/sh "mkdir" "-p"))
-(defn copy [from to] (shell/sh "cp" "-r" from to) (println "Copy:" "cp" "-r" from to))
+(defn copy [from to] (shell/sh "cp" "-r" from to))
 (defn path-join [& args] (string/join "/" args))
-(defn time-now [] (str "[" (.toISOString (js/Date.)) "] "))
-(defn log [s] (core/spit "/tmp/buck-clj.log" (str (time-now) s "\n") :append true) (println s))
 
-
-"a" "a-clj"
-
-(defn organize-sources [from to]
+(defn organize-sources
+  "Given source folder and destination will go though all source files
+  and put in a right folders dependending on a file namespace"
+  [from to]
   (letfn [(is-ns? [form] (and (list? form) (= (first form) 'ns) (< 1 (count form))))
           (parse-ns [form] (cond (is-ns? form) (-> form second str)
                                  (list? form) (some parse-ns form)))
@@ -34,12 +32,10 @@
                      path-for-ns
                      (copy-source %))))))
 
-(defn parse-args [args]
-  (let [info-file (-> args first core/slurp string/trim)]
-    (zipmap [:name :type :main :src :out :task]
-            (conj (string/split info-file ";") (second args)))))
-
-(defn organize-deps [deps-file]
+(defn organize-deps
+  "Read deps file looking for sub-dependencies and merge all of them
+  back into deps file"
+  [deps-file]
   (letfn [(read-subdeps [path]
             (let [subdep-file (path-join path "deps")]
               (if (io/file-attributes subdep-file)
@@ -54,12 +50,16 @@
          (string/join "\n")
          (core/spit deps-file))))
 
-(defn merge-deps-src [deps-file to]
+(defn merge-deps-src
+  "Merge deps source into current module src folder"
+  [deps-file to]
   (->> (core/slurp deps-file)
        string/split-lines
        (mapv #(copy (path-join % "src") to))))
 
-(defn update-project-file [name main path]
+(defn update-project-file
+  "Updates project file and replace tokens there with supplied data"
+  [name main path]
   (let [project-file (path-join path "project.clj")]
     (-> (core/slurp project-file)
         (string/replace "{{name}}" name)
@@ -67,7 +67,11 @@
         (string/replace "{{deps}}" (core/slurp (path-join path "deps")))
         (#(core/spit project-file %)))))
 
-(defn ensure-main-exists [main path type]
+(defn ensure-main-exists
+  "Creates entry point file which requires all the existing module
+  namespaces (including tests) which simplifies REPL and testing. Used
+  as main if no main was supplied"
+  [main path type]
   (let [def-main "module.core"
         find-all-namespaces (fn[path]
                               (->> (shell/sh "find" path "-type" "f" "-name" "*.clj*")
@@ -95,7 +99,10 @@
       def-main
       main)))
 
-(let [{:keys [src out type task name main]} (parse-args core/*command-line-args*)]
+(let [parse-args #(let [info-file (-> % first core/slurp string/trim)]
+                    (zipmap [:name :type :main :src :out :task]
+                            (conj (string/split info-file ";") (second %))))
+      {:keys [src out type task name main]} (parse-args core/*command-line-args*)]
   (case task
     "build" (do
               (organize-sources src (path-join out "src"))

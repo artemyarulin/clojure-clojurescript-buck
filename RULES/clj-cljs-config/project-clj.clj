@@ -2,4 +2,4 @@
   :dependencies [{{deps}}]
   :main {{main}}
   :aot [{{main}}]
-  :source-paths ["src"])
+  :source-paths ["src" "test"])
