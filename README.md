@@ -1,5 +1,7 @@
 # Clojure-ClojureScript-Buck
 
+[![Build Status](https://travis-ci.org/artemyarulin/clojure-clojurescript-buck.svg?branch=master)](https://travis-ci.org/artemyarulin/clojure-clojurescript-buck)
+
 Clojure and ClojureScript support for [Buck build system](https://buckbuild.com). If you have Clojure/ClojureScript and monorepo then it's a thing to check
 
 ## Features
