@@ -56,7 +56,7 @@ def cljs_module(name,src=[],modules=[],main=None,tests=[],resources=[],itests=[]
                     src = ensure_list(src),
                     modules = ensure_list(modules) + cljs_deps,
                     main = main,
-                    tests = tests)
+                    tests = ensure_list(tests) + ensure_list(itests))
 
     if (main):
         genrule(name + '-release',
@@ -75,4 +75,4 @@ def cljc_module(name,src=[],modules=[],main=None,tests=[],resources=[],itests=[]
                     src = ensure_list(src),
                     modules = ensure_list(modules) + cljs_deps,
                     main = main,
-                    tests = tests)
+                    tests = ensure_list(tests) + ensure_list(itests))
