@@ -22,14 +22,33 @@
             (let [source-path (.-path source-file)
                   source-name (-> source-path (string/split "/") last)]
               (make-dirs path-to)
-              (copy source-path (path-join path-to source-name))))]
+              (copy source-path (path-join path-to source-name))))
+          (find-out-path [file]
+            (if (->> file :path (re-find #"clj$|cljs$|cljc$"))
+              (->> file
+                   core/slurp
+                   (reader/read-string {:read-cond :allow :features #{:clj :cljs}})
+                   parse-ns
+                   path-for-ns)
+              (-> file
+                  :path
+                  (string/replace from "")
+                  (string/split "/")
+                  rest
+                  butlast
+                  ((fn[path-parts]
+                     ;; HACK: If we would use clj_module(src=glob(['src/**/*'])) then Buck would copy
+                     ;; everything under src folder, but root folder would be still src, same for tests.
+                     ;; So here we just flatten folders together in order to avoid paths like module/src/src/file
+                     (if (= (first path-parts)
+                            (last (string/split to "/")))
+                       (rest path-parts)
+                       path-parts)))
+                  (#(apply path-join to %)))))]
     (->> (core/file-seq from)
          (filter #(not (io/directory? %)))
          (mapv #(->> %
-                     core/slurp
-                     (reader/read-string {:read-cond :allow :features #{:clj :cljs}})
-                     parse-ns
-                     path-for-ns
+                     find-out-path
                      (copy-source %))))))
 
 (defn organize-deps
@@ -74,7 +93,7 @@
   [main path type]
   (let [def-main "module.core"
         find-all-namespaces (fn[path]
-                              (->> (shell/sh "find" path "-type" "f" "-name" "*.clj*")
+                              (->> (shell/sh "find" path "-type" "f" "-name" "*.cljc" "-o" "-name" (str "*." type))
                                    :out
                                    string/split-lines
                                    (map #(-> %
@@ -93,6 +112,7 @@
     (make-dirs main-path)
     (->> (concat (find-all-namespaces (path-join path "src"))
                  (find-all-namespaces (path-join path "test")))
+         (filter (complement string/blank?))
          main-file
          (core/spit (path-join main-path (str "core." type))))
     (if (string/blank? main)
