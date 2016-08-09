@@ -18,7 +18,8 @@ def clj_cljs_module(ext,project_file,builder,tester,name,src=None,modules=[],mai
                    'echo "{name};{type};{main};$SRCDIR;$OUT;" > $OUT/info && '.format(name=name,type=ext,main=main or "") +
                    ('&&'.join(map(lambda d: 'echo "$(location ' + d + ')" >> $OUT/deps',modules)) if len(modules) else 'true') + '&& ' +
                    '$(location {0}) $OUT/info build'.format(builder),
-            out = 'build')
+            out = 'build',
+            visibility = ['PUBLIC'])
 
     # REPL/Test task: For testing we have to have separate target (or
     # include test files into main target, which we don't want). It
