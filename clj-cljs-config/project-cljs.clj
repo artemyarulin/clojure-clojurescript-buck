@@ -21,4 +21,10 @@
                                           :language-in :ecmascript5
                                           :language-out :ecmascript5
                                           :output-dir "target"
-                                          :output-to "target/{{name}}.js"}}}})
+                                          :output-to "target/{{name}}.js"}}
+                       :release {:source-paths ["src"]
+                                 :compiler {:optimizations :advanced
+                                            :language-in :ecmascript5
+                                            :language-out :ecmascript5
+                                            :output-dir "release"
+                                            :output-to "release/{{name}}.js"}}}})

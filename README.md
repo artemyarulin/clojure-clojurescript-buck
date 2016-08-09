@@ -22,18 +22,16 @@ Clojure and ClojureScript support for [Buck build system](https://buckbuild.com)
 
 Currently only MacOS is supported. Linux/Windows support is covered in this [issue 18](https://github.com/artemyarulin/clojure-clojurescript-buck/issues/18)
 
-Just copy `RULES` folder into your repo, then configure your `.buckconfig` and include of `clj-cljs-config`:
+- Put content of this repo to the right place in your monorepo
+- Rename `clj-cljs-config/BUCK.example` to `clj-cljs-config/BUCK` to make it processable by Buck
+- Change `.buckconfig` so that it will include your config file by default:
 
 ```
 [buildfile]
-  includes = //RULES/clj-cljs-config/config.py
+  includes = //path/to-config/clj-cljs-config/config.py
 ```
 
-`RULES` has two subfolders:
-- `clj-cljs` - folder with actual macro helpers which builds Clojure and ClojureScript. Not meant to be modified
-- `clj-cljs-config` - has all configuration related to build process. Feel free to modify according to your needs
-
-It's recommended to create a separate folder with list of external libs, like it's done in [ext/BUCK](ext/BUCK)
+Once it's done check `clj-cljs-config/config.py` - most likely you gonna need to change paths. Feel free to add any additional build logic there
 
 ## Configuration
 
