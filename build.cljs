@@ -27,6 +27,7 @@
             (if (->> file :path (re-find #"clj$|cljs$|cljc$"))
               (->> file
                    core/slurp
+                   (#(str "(\n" % "\n)"))
                    (reader/read-string {:read-cond :allow :features #{:clj :cljs}})
                    parse-ns
                    path-for-ns)
@@ -113,6 +114,7 @@
     (->> (concat (find-all-namespaces (path-join path "src"))
                  (find-all-namespaces (path-join path "test")))
          (filter (complement string/blank?))
+         (filter (partial not= "deps"))
          main-file
          (core/spit (path-join main-path (str "core." type))))
     (if (string/blank? main)
