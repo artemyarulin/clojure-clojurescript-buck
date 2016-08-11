@@ -5,7 +5,7 @@ def ensure_list(i):
 
 def clj_cljs_module(ext,project_file,builder,tester,name,src=None,modules=[],main=None,tests=[],resources=[]):
     "Defines CLJ/CLJS/CLJC module. As it defines low level interface you are encouruged to wrap it with your custom function"
-    src = [name.replace('-','_') + '.' + ext] if src == None else src
+    src = [name.replace('-','_') + '.' + ext] if src == None else ensure_list(src)
     modules,tests,resources= map(ensure_list,[modules,tests,resources])
 
     # Prepares required resources and modules sub-dependencies. Create
