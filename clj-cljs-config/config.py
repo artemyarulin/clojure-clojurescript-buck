@@ -28,14 +28,14 @@ builder = executer('builder-planck')
 # file, one test, one module dependency so you can use
 # clj_module(src='a.clj',tests='a_test.clj',modules=':b') without
 # wrapping each with []
-def clj_module(name,src=[],modules=[],main=None,tests=[],resources=[]):
+def clj_module(name,src=None,modules=[],main=None,tests=[],resources=[]):
     clj_cljs_module(ext = 'clj',
                     project_file = resource('project-clj'),
                     builder = builder,
                     resources = ensure_list(resources),
                     tester = executer('tester-lein-clj'),
                     name = name,
-                    src = ensure_list(src),
+                    src = src,
                     modules = ensure_list(modules) + [ext('org.clojure/clojure')],
                     main = main,
                     tests = tests)
@@ -46,14 +46,14 @@ def clj_module(name,src=[],modules=[],main=None,tests=[],resources=[]):
 
 # Another custom logic is release task - if main is specified then new
 # target is added which creates release bundle
-def cljs_module(name,src=[],modules=[],main=None,tests=[],resources=[],itests=[]):
+def cljs_module(name,src=None,modules=[],main=None,tests=[],resources=[],itests=[]):
     clj_cljs_module(ext = 'cljs',
                     project_file = resource('project-cljs'),
                     builder = builder,
                     resources = ensure_list(resources) + [resource('figwheel-index')],
                     tester = executer('tester-lein-cljs-doo') if itests else executer('tester-lein-cljs-planck'),
                     name = name,
-                    src = ensure_list(src),
+                    src = src,
                     modules = ensure_list(modules) + cljs_deps,
                     main = main,
                     tests = ensure_list(tests) + ensure_list(itests))
@@ -65,14 +65,14 @@ def cljs_module(name,src=[],modules=[],main=None,tests=[],resources=[],itests=[]
                 out = 'build')
 
 # Nothing interesting here - same as for CLJS, but wihtout release task
-def cljc_module(name,src=[],modules=[],main=None,tests=[],resources=[],itests=[]):
+def cljc_module(name,src=None,modules=[],main=None,tests=[],resources=[],itests=[]):
     clj_cljs_module(ext = 'cljc',
                     project_file = resource('project-cljs'),
                     builder = builder,
                     resources = ensure_list(resources) + [resource('figwheel-index')],
                     tester = executer('tester-lein-cljs-doo') if itests else executer('tester-lein-cljs-planck'),
                     name = name,
-                    src = ensure_list(src),
+                    src = src,
                     modules = ensure_list(modules) + cljs_deps,
                     main = main,
                     tests = ensure_list(tests) + ensure_list(itests))
