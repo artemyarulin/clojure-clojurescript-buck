@@ -3,7 +3,7 @@ from functools import partial
 def ensure_list(i):
     return i if isinstance(i,list) else [i]
 
-def clj_cljs_module(ext,project_file,builder,tester,name,src=None,modules=[],main=None,tests=[],resources=[]):
+def clj_cljs_module(ext,project_file,builder,tester,name,src=None,modules=[],main=None,tests=[],tester_args=[],resources=[]):
     "Defines CLJ/CLJS/CLJC module. As it defines low level interface you are encouruged to wrap it with your custom function"
     src = [name.replace('-','_') + '.' + ext] if src == None else ensure_list(src)
     modules,tests,resources= map(ensure_list,[modules,tests,resources])
@@ -48,7 +48,7 @@ def clj_cljs_module(ext,project_file,builder,tester,name,src=None,modules=[],mai
     if tests:
         sh_test(name = name + '-test',
                 test = tester,
-                args = ['$(location :{0})'.format('__' + name)],
+                args = ['$(location :{0})'.format('__' + name)] + ensure_list(tester_args),
                 deps = [':__' + name])
 
 def ext_dep(name):
