@@ -1,5 +1,5 @@
 # Project files
-for name in ['project-clj.clj','project-cljs.clj']:
+for name in ['project-clj.clj','project-cljs.clj','project-repl.clj']:
     export_file(name = name.split('.')[0],
                 src = name,
                 out = name,
@@ -10,3 +10,9 @@ export_file(name = 'figwheel-index',
             src = 'figwheel-index.html',
             out = 'index.html',
             visibility = ['PUBLIC'])
+
+clj_cljs_repl(name = 'repl',
+              builder = '//:builder-planck',
+              project_file = ':project-repl',
+              resource = ':figwheel-index',
+              output_folder = '.repl')

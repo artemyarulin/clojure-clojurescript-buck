@@ -3,76 +3,105 @@
 # clj-cljs-buck: Use it as an example, change it and store in your
 # repo
 
-# Import clj-cljs macroses
 include_defs('//lib.py')
 
-# Helpers for easier referencing different things
+# Set of helpers
 def ext(name):
     return '//tests:' + name
 def executer(name):
     return '//:' + name
 def resource(name):
     return '//clj-cljs-config:' + name
+def ensure_list(i):
+    return i if isinstance(i,list) else [i]
 cljs_deps = [ext('org.clojure/clojure'),
              ext('org.clojure/clojurescript'),
              ext('figwheel-sidecar'),
              ext('com.cemerick/piggieback')]
 builder = executer('builder-planck')
 
-# First is CLJ wrapper - nothing fancy, we just predefine what project
-# file to use, setup tester (which is an only options for CLJ for now)
-# and add Clojure as dependency that is added always.
+def module(ext,project_file,name,src,main,resources,modules,tests,test_resources,test_modules,tester,tester_args=[]):
+    """Module creator helper. ensure_list that ensures that item is a list
+    or wraps item with it. Most often you want to use one source file,
+    one test, one module dependency so you can use
+    clj_module(src='a.clj',tests='test.clj',modules=':b') without
+    wrapping each with []. Also allows specifiying module without
+    source files. name + ext will be used instead
+    """
+    src = [name.replace('-','_') + '.' + ext] if src == None else ensure_list(src)
 
-# Only interesting part is ensure_list that ensures that item is a
-# list or wraps item with it. Most often you want to use one source
-# file, one test, one module dependency so you can use
-# clj_module(src='a.clj',tests='a_test.clj',modules=':b') without
-# wrapping each with []
-def clj_module(name,src=None,modules=[],main=None,tests=[],resources=[]):
-    clj_cljs_module(ext = 'clj',
-                    project_file = resource('project-clj'),
+    clj_cljs_module(ext = ext,
+                    project_file = resource(project_file),
                     builder = builder,
+                    name = name,
                     resources = ensure_list(resources),
-                    tester = executer('tester-lein-clj'),
-                    name = name,
                     src = src,
-                    modules = ensure_list(modules) + [ext('org.clojure/clojure')],
-                    main = main,
-                    tests = tests)
+                    modules = ensure_list(modules),
+                    main = main)
+    if tests:
+        clj_cljs_module(ext = ext,
+                        project_file = resource(project_file),
+                        builder = builder,
+                        name = name,
+                        resources = ensure_list(test_resources),
+                        src = ensure_list(tests),
+                        modules = ensure_list(test_modules) + [':' + name],
+                        main = main,
+                        tester = tester,
+                        tester_args = tester_args)
 
-# Here goes CLJS wrapper with example of custom logic - if tests
-# supplied than planck test executer is used (because it's 10 times
-# faster!), otherwise classic doo.
+def clj_module(name,src=None,modules=[],main=None,tests=[],test_modules=[],resources=[],test_resources=[]):
+    """First is CLJ wrapper - nothing fancy, we just predefine what
+    project file to use, setup tester (which is an only options for
+    CLJ for now) and add Clojure as dependency that is added always.
+    """
+    module('clj',
+           'project-clj',
+           name,
+           src,
+           main,
+           resources,
+           ensure_list(modules) + [ext('org.clojure/clojure')],
+           tests,
+           test_resources,
+           test_modules,
+           executer('tester-lein-clj'))
 
-# Another custom logic is release task - if main is specified then new
-# target is added which creates release bundle
-def cljs_module(name,src=None,modules=[],main=None,tests=[],resources=[],itests=[]):
-    clj_cljs_module(ext = 'cljs',
-                    project_file = resource('project-cljs'),
-                    builder = builder,
-                    resources = ensure_list(resources) + [resource('figwheel-index')],
-                    tester = executer('tester-lein-cljs-doo') if itests else executer('tester-lein-cljs-planck'),
-                    name = name,
-                    src = src,
-                    modules = ensure_list(modules) + cljs_deps,
-                    main = main,
-                    tests = ensure_list(tests) + ensure_list(itests))
+def cljs_module(name,src=None,modules=[],main=None,tests=[],test_modules=[],resources=[],test_resources=[],itests=[]):
+    """Here goes CLJS wrapper with example of custom logic - if tests
+    supplied than planck test executer is used (because it's 10 times
+    faster!), otherwise classic doo. Another custom logic is release
+    task - if main is specified then new target is added which creates
+    release bundle
+    """
+    module('cljs',
+           'project-cljs',
+           name,
+           src,
+           main,
+           resources,
+           ensure_list(modules) + cljs_deps,
+           ensure_list(tests) + ensure_list(itests),
+           test_resources,
+           test_modules,
+           executer('tester-lein-cljs-doo') if itests else executer('tester-lein-cljs-planck'))
 
     if (main):
         genrule(name + '-release',
                 srcs = [],
-                bash = 'mkdir $OUT && cd $(location :__{0}) && lein cljsbuild once release && cp release/{0}.js $OUT && cp -r resources $OUT'.format(name),
+                bash = 'mkdir $OUT && cd $(location :{0}) && lein cljsbuild once release && cp release/{0}.js $OUT && cp -r resources $OUT'.format(name),
                 out = 'build')
 
-# Nothing interesting here - same as for CLJS, but wihtout release task
-def cljc_module(name,src=None,modules=[],main=None,tests=[],resources=[],itests=[]):
-    clj_cljs_module(ext = 'cljc',
-                    project_file = resource('project-cljs'),
-                    builder = builder,
-                    resources = ensure_list(resources) + [resource('figwheel-index')],
-                    tester = executer('tester-lein-cljs-doo') if itests else executer('tester-lein-cljs-planck'),
-                    name = name,
-                    src = src,
-                    modules = ensure_list(modules) + cljs_deps,
-                    main = main,
-                    tests = ensure_list(tests) + ensure_list(itests))
+def cljc_module(name,src=None,modules=[],main=None,tests=[],test_modules=[],resources=[],test_resources=[],itests=[]):
+    module('cljc',
+           'project-cljs',
+           name,
+           src,
+           main,
+           resources,
+           ensure_list(modules) + cljs_deps,
+           ensure_list(tests) + ensure_list(itests),
+           test_resources,
+           test_modules,
+           executer('tester-lein-cljs-doo') if itests else executer('tester-lein-cljs-planck'))
+
