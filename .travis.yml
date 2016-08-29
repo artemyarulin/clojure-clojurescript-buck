@@ -9,4 +9,4 @@ install:
 script:
   - mv tests/BUCK.tests tests/BUCK
   - mv clj-cljs-config/BUCK.example clj-cljs-config/BUCK
-  - buck build "//..." && buck test "//..."
+  - TERM=dumb buck build "//..." && buck test "//..."
