@@ -7,50 +7,54 @@
 
 ;; Helpers
 (def make-dirs (partial shell/sh "mkdir" "-p"))
+(def pwd (-> "pwd" shell/sh :out string/trim))
 (defn copy [from to] (shell/sh "cp" "-r" from to))
+(defn symlink [from to] (shell/sh "ln" from to))
 (defn path-join [& args] (string/join "/" args))
+(defn delete-last-path-component [p] (-> p (string/split "/") butlast (#(string/join "/" %))))
+(defn delete-path [path] (shell/sh "rm" "-rf" path))
+(defn pad-left [s len char] (if (< (count s) len) (recur (str char s) len char) s))
 
-(defn organize-sources
-  "Given source folder and destination will go though all source files
-  and put in a right folders dependending on a file namespace"
-  [from to]
+(defn path-from-content-namespace
+  "Given basepath and file content will parse content and return new
+  path based on file namespace"
+  [base-path file-content]
   (letfn [(is-ns? [form] (and (list? form) (= (first form) 'ns) (< 1 (count form))))
           (parse-ns [form] (cond (is-ns? form) (-> form second str)
-                                 (list? form) (some parse-ns form)))
-          (path-for-ns [ns] (-> ns (string/split ".") butlast (#(apply path-join to %))))
-          (copy-source [source-file path-to]
+                                 (list? form) (some parse-ns form)))]
+    (->> file-content
+         (#(str "(\n" % "\n)")) ;; Workaround if content has more than one top level s-exp, otherwise read-string will return only first one
+         (reader/read-string {:read-cond :allow :features #{:clj :cljs}})
+         parse-ns
+         (#(string/split % "."))
+         butlast
+         (#(apply path-join base-path %)))))
+
+(defn organize-sources
+  "Given source files and destination will go though all source files
+  and exec copy-cmd for each file with original and new path which
+  will be created based on a file namespace"
+  [base-path files to copy-cmd]
+  (letfn [(copy-source [source-file path-to]
             (let [source-path (.-path source-file)
                   source-name (-> source-path (string/split "/") last)]
               (make-dirs path-to)
-              (copy source-path (path-join path-to source-name))))
+              (copy-cmd source-path (path-join path-to source-name))))
           (find-out-path [file]
             (if (->> file :path (re-find #"clj$|cljs$|cljc$"))
-              (->> file
-                   core/slurp
-                   (#(str "(\n" % "\n)"))
-                   (reader/read-string {:read-cond :allow :features #{:clj :cljs}})
-                   parse-ns
-                   path-for-ns)
-              (-> file
-                  :path
-                  (string/replace from "")
-                  (string/split "/")
-                  rest
-                  butlast
+              (->> file core/slurp (path-from-content-namespace to))
+              (-> file :path (string/replace base-path "") (string/split "/") rest butlast
                   ((fn[path-parts]
                      ;; HACK: If we would use clj_module(src=glob(['src/**/*'])) then Buck would copy
                      ;; everything under src folder, but root folder would be still src, same for tests.
                      ;; So here we just flatten folders together in order to avoid paths like module/src/src/file
-                     (if (= (first path-parts)
-                            (last (string/split to "/")))
+                     (if (= (first path-parts) (last (string/split to "/")))
                        (rest path-parts)
                        path-parts)))
                   (#(apply path-join to %)))))]
-    (->> (core/file-seq from)
+    (->> files
          (filter #(not (io/directory? %)))
-         (mapv #(->> %
-                     find-out-path
-                     (copy-source %))))))
+         (mapv #(->> % find-out-path (copy-source %))))))
 
 (defn organize-deps
   "Read deps file looking for sub-dependencies and merge all of them
@@ -60,8 +64,7 @@
             (let [subdep-file (path-join path "deps")]
               (if (io/file-attributes subdep-file)
                 (-> subdep-file core/slurp string/split-lines)
-                [])))
-          ]
+                [])))]
     (->> (core/slurp deps-file)
          string/split-lines
          (map read-subdeps)
@@ -121,17 +124,59 @@
       def-main
       main)))
 
-(let [parse-args #(let [info-file (-> % first core/slurp string/trim)]
-                    (zipmap [:name :type :main :src :out :task]
-                            (conj (string/split info-file ";") (second %))))
-      {:keys [src out type task name main]} (parse-args core/*command-line-args*)]
-  (case task
-    "build" (do
-              (organize-sources src (path-join out "src"))
-              (merge-deps-src (path-join out "deps") out)
-              (organize-deps (path-join out "deps")))
-    "test" (do
-             (organize-sources src (path-join out "test"))
-             (update-project-file name
-                                  (ensure-main-exists main out type)
-                                  out))))
+(defn get-all-project-deps []
+  (shell/sh "buck" "build" "//ext:") ;; Ensure that all exts got built first
+  (->> (shell/sh "buck" "targets" "//ext:" "--show-output" "--verbose" "0")
+       :out
+       string/split-lines
+       (map #(string/split % " "))
+       (map second)
+       (map #(path-join pwd % "deps"))
+       (map core/slurp)
+       string/join))
+
+(defn run-repl [args]
+  (let [[_ project-file resource output-folder query] args
+        targets (->> query (shell/sh "buck" "query") :out string/split-lines)
+        source-dest-path (path-join pwd output-folder "src")
+        resource-dest-path (path-join pwd output-folder "resources")]
+    (delete-path source-dest-path)
+    (delete-path resource-dest-path)
+    (loop [targets' targets counter 1]
+      (when-let [target (first targets')]
+        (println (str "[" (-> counter str (pad-left (-> targets count str count) " ")) "/" (count targets) "] Linking " target))
+        (let [buildfile-path (->> (shell/sh "buck" "query" (str "buildfile('" target "')")) :out (path-join pwd) delete-last-path-component)
+              target-files (->> (shell/sh "buck" "query" (str "labels(srcs,deps('" target "'))")) :out string/split-lines (map #(path-join pwd %)))]
+          (organize-sources buildfile-path
+                            (map io/file target-files)
+                            source-dest-path
+                            symlink)
+          (organize-sources buildfile-path
+                            (->> target-files
+                                 (filter #(not (re-find #"clj$|cljs$|cljc$" %)))
+                                 (map io/file))
+                            resource-dest-path
+                            symlink))
+        (recur (rest targets') (inc counter))))
+    (organize-sources (delete-last-path-component resource) [(io/file resource)] (path-join resource-dest-path "public") symlink)
+    (ensure-main-exists nil output-folder "cljs")
+    (-> (core/slurp project-file)
+        (string/replace "{{deps}}" (get-all-project-deps))
+        (#(core/spit (path-join output-folder "project.clj") %)))))
+
+(let [args core/*command-line-args*]
+  (case (first args)
+    "repl" (run-repl args)
+    ;; We cannot run Buck commands while we are inside a command which is running by Buck again
+    ;; As a workaround we print the actual command to execute, so we can still use it like
+    ;; $(buck run repl -- "//...")
+    "repl-init" (print (string/join " " (apply vector (nth args 1) "repl" (subvec (vec args) 2))))
+    (let [parse-args #(let [info-file (-> % first core/slurp string/trim)]
+                        (zipmap [:name :type :main :src :out :task]
+                                (conj (string/split info-file ";") (second %))))
+          {:keys [src out type task name main]} (parse-args args)
+          build? (= task "build")]
+      (organize-sources src (core/file-seq src) (path-join out (if build? "src" "test")) symlink)
+      (merge-deps-src (path-join out "deps") out)
+      (organize-deps (path-join out "deps"))
+      (update-project-file name (if build? name (ensure-main-exists main out type)) out))))
